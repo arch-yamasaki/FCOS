@@ -9,6 +9,101 @@ This project hosts the code for implementing the FCOS algorithm for object detec
 
 The full paper is available at: [https://arxiv.org/abs/1904.01355](https://arxiv.org/abs/1904.01355). 
 
+## This is the Repository for Kuzushiji Detection.
+
+### TODO
+
+- [ ] 普通のmaskrcnnn-benchamarkのcocodemoしてみる。
+- [ ] 提出も一回してみる。
+- [ ] fpnを実施するためのtransform/resizeあたりの修正。
+
+### Changed File
+''
+
+### GCP Command run
+Below is the cloud engine for builging nvidia-docker
+```sh
+gcloud compute instances create kuzushizi  \
+    --machine-type n1-standard-4 --zone 'us-central1-a' \
+    --accelerator 'type=nvidia-tesla-k80,count=1' \
+    --image-family 'pytorch-latest-gpu' \
+    --image-project deeplearning-platform-release \
+    --boot-disk-size=120GB \
+    --metadata='install-nvidia-driver=True' \
+    --maintenance-policy TERMINATE
+
+```
+
+Below is the cloud engine for training models which is pushed maskrcnn-benchmark container images
+
+- TODO: Dockerは見えないところで動いているので、普通に作った後にdockerimageをpullして、そしてattach、という流れを経る必要がありそう。
+- TODO: datasetsを取得。
+- colabでちゃんと動いてから。
+
+```sh
+gcloud compute instances create-with-container kuzushizi  \
+    --machine-type n1-standard-4 --zone 'asia-northeast1-a' \
+    --accelerator 'type=nvidia-tesla-t4,count=1' \
+    --image-family 'pytorch-latest-gpu' \
+    --image-project deeplearning-platform-release \
+    --boot-disk-size=120GB \
+    --metadata='install-nvidia-driver=True' \
+    --container-image 'asia.gcr.io/kuzushiji-254306/maskrcnn-benchmark-gpu' \
+    --maintenance-policy TERMINATE
+```
+
+
+## About Datasets
+Iy you want to train your own datasets, you should make `./datasets` directory and prepare datasets.
+If you want to change dataset_catalog, you could refer to `~/mascrcnn-benchmark/configs/dataset_catalog.py` and add dataset_catalogs.
+
+An examples is below.
+
+```py
+{
+    "my_train": {
+        "data_dir": "voc/my_datas",
+        "split": "train"
+    },
+    "voc_2007_train_cocostyle": {
+        "img_dir": "voc/VOC2007/JPEGImages",
+        "ann_file": "voc/VOC2007/Annotations/pascal_train2007.json"
+    },
+    "my_val": {
+        "data_dir": "voc/my_datas",
+        "split": "val"
+    },
+    "voc_2007_val_cocostyle": {
+        "img_dir": "voc/VOC2007/JPEGImages",
+        "ann_file": "voc/VOC2007/Annotations/pascal_val2007.json"
+    },
+    "my_test": {
+        "data_dir": "voc/my_datas",
+        "split": "test"
+    },
+    "voc_2007_test_cocostyle": {
+        "img_dir": "voc/VOC2007/JPEGImages",
+        "ann_file": "voc/VOC2007/Annotations/pascal_test2007.json"
+    }
+}
+
+```
+
+Also if your datasets is different classes,
+you should change lists `./maskrcnn_benchmark/datas/datasets/voc.py`
+
+```py
+
+```
+
+> When you want to change voc.py, open '__init__.py' and change below code and make voc_{name}.py.
+> ```py
+> # from .voc import PascalVOCDataset
+> from .voc_{name} import PascalVOCDataset
+> ```
+
+-------------
+
 ## Highlights
 - **Totally anchor-free:**  FCOS completely avoids the complicated computation related to anchor boxes and all hyper-parameters of anchor boxes.   
 - **Better performance:** The very simple one-stage detector achieves much better performance (38.7 vs. 36.8 in AP with ResNet-50) than Faster R-CNN. Check out more models and experimental results [here](#models).
